@@ -14,11 +14,20 @@ from pandas_log import settings
 from pandas_log.aop_utils import (keep_pandas_func_copy,
                                   restore_pandas_func_copy,)
 from pandas_log.pandas_execution_stats import StepStats, get_execution_stats
+import pandas_log.patched_logs_functions as plf
 
 __all__ = ["auto_enable", "auto_disable", "enable"]
 
 
 ALREADY_ENABLED = False
+global PANDAS_LOG_ON
+PANDAS_LOG_ON = True
+
+
+
+def disable():
+    global PANDAS_LOG_ON
+    PANDAS_LOG_ON = False
 
 
 def auto_disable():
@@ -91,6 +100,28 @@ def auto_enable(verbose=False, silent=False, full_signature=True, copy_ok=True, 
     if extras:
         enable_extras()
     ALREADY_ENABLED = True
+
+
+def override_dataframe_method(method_name, patched_function, patched_prefix='patched_', original_prefix='original_'):
+
+    original_method = getattr(pd.DataFrame, method_name)
+    setattr(pd.DataFrame, patched_prefix + method_name, patched_function)
+    setattr(pd.DataFrame, original_prefix + method_name, original_method)
+
+    def delegation_method(self, *args, **kwargs):
+        global PANDAS_LOG_ON
+        if PANDAS_LOG_ON:
+            return getattr(self, patched_prefix + method_name)(*args, **kwargs)
+        else:
+            return getattr(self, original_prefix + method_name)(*args, **kwargs)
+
+    setattr(pd.DataFrame, method_name, delegation_method)
+
+
+def init_pandas_log():
+    for method_name in settings.DATAFRAME_METHODS_TO_OVERIDE:
+        patched_function = getattr(plf, 'log_' + method_name, 'log_default')
+        override_dataframe_method(method_name, patched_function)
 
 
 def enable_extras():
