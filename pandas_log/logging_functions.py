@@ -151,6 +151,7 @@ def log_default(output_df, input_df, *args, **kwargs):
     logs = "\n".join(logs)
     return logs, tips
 
+
 def log_no_message(output_df, input_df, *args, **kwargs):
     return '', ''
 
@@ -531,9 +532,3 @@ def log__iterrows(output_df, input_df):
     tips = ITERROWS_TIPS
     logs = ""
     return logs, tips
-
-
-# TODO add tip on types+cardinality
-
-if __name__ == "__main__":
-    pass
