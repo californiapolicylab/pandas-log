@@ -6,11 +6,11 @@ from time import time
 
 import pandas as pd
 
-from pandas_log import patched_logs_functions
+from pandas_log import patched_log_functions
 from pandas_log.aop_utils import (append_df_attr, calc_step_number,
                                   get_df_attr, get_pandas_func,
-                                  get_signature_repr, set_df_attr,)
-from pandas_log.settings import (DATAFRAME_ADDITIONAL_METHODS_TO_OVERIDE,
+                                  get_pretty_signature_repr, set_df_attr, )
+from pandas_log.settings import (DATAFRAME_VERBOSE_METHODS_TO_OVERIDE,
                                  PATCHED_LOG_METHOD_PREFIX, )
 
 with warnings.catch_warnings():
@@ -73,15 +73,6 @@ class StepStats:
         self.output_df = output_df
 
     @staticmethod
-    def calc_df_series_memory(df_or_series):
-        res = None
-        if isinstance(df_or_series, pd.Series):
-            mem = df_or_series.memory_usage(index=True, deep=True)
-            res = humanize.naturalsize(mem)
-        elif isinstance(df_or_series, pd.DataFrame):
-            mem = df_or_series.memory_usage(index=True, deep=True)
-            res = humanize.naturalsize(mem.sum())
-        return res
 
     def persist_execution_stats(self):
         prev_exec_history = get_df_attr(self.input_df, "execution_history", [])
@@ -97,7 +88,7 @@ class StepStats:
 
         if (
             verbose
-            or self.fn.__name__ not in DATAFRAME_ADDITIONAL_METHODS_TO_OVERIDE
+            or self.fn.__name__ not in DATAFRAME_VERBOSE_METHODS_TO_OVERIDE
         ):
             s = self.__repr__(verbose, copy_ok)
             if s:
@@ -110,15 +101,15 @@ class StepStats:
         self.fn_kwargs['copy_ok'] = copy_ok
         try:
             log_method = getattr(
-                patched_logs_functions,
+                patched_log_functions,
                 f"{PATCHED_LOG_METHOD_PREFIX}{self.fn.__name__}",
             )
         except AttributeError:
             # Method is listed as a method to override, but no patched function exists
             if verbose:
-                log_method = getattr(patched_logs_functions, "log_default")
+                log_method = getattr(patched_log_functions, "log_default")
             else:
-                log_method = getattr(patched_logs_functions, "log_no_message")
+                log_method = getattr(patched_log_functions, "log_no_message")
 
         log_method = partial(log_method, self.output_df, self.input_df)
         logs, tips = log_method(*self.fn_args, **self.fn_kwargs)
@@ -129,12 +120,12 @@ class StepStats:
 
     def __repr__(self, verbose, copy_ok):
         # Step title
-        func_sig = get_signature_repr(
+        func_sig = get_pretty_signature_repr(
             self.cls, self.fn, self.fn_args, self.full_signature
         )
         step_number = (
             "X"
-            if self.fn.__name__ in DATAFRAME_ADDITIONAL_METHODS_TO_OVERIDE
+            if self.fn.__name__ in DATAFRAME_VERBOSE_METHODS_TO_OVERIDE
             else self.execution_stats.step_number
         )
         step_title = f"{step_number}) {func_sig}"

@@ -222,7 +222,7 @@ def log_assign(output_df, input_df, **kwargs):
         else:
             # Otherwise just indicated which columns changed
             # (Doing the above calculation would always say zero values changed in this case, since if copying isn't
-            # ok then input_df and output_df point to the same object)
+            # ok then input_pd_obj and output_df point to the same object)
             logs.append(
                 ASSIGN_EXISTING_MSG.format(
                     existing_cols=", ".join(changed_cols)

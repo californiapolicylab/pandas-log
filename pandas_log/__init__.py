@@ -7,4 +7,3 @@ __author__ = """Eyal Trabelsi"""
 __email__ = "eyaltrabelsi@gmail.com"
 __version__ = "0.0.0"
 
-ORIGINAL_METHOD_PREFIX = "original_"

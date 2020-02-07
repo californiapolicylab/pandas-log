@@ -4,7 +4,7 @@ from inspect import signature
 import pandas as pd
 
 from pandas_log import settings
-from pandas_log.settings import DATAFRAME_ADDITIONAL_METHODS_TO_OVERIDE
+from pandas_log.settings import DATAFRAME_VERBOSE_METHODS_TO_OVERIDE
 
 
 def set_df_attr(df, attr_name, attr_value):
@@ -53,7 +53,7 @@ def get_pandas_func(cls, func, prefix=settings.ORIGINAL_METHOD_PREFIX):
     return getattr(cls, f"{prefix}{func.__name__}")
 
 
-def get_signature_repr(cls, fn, args, full_signature=True):
+def get_pretty_signature_repr(method, args, full_signature=True):
     """ Get the signature for the original pandas method with actual values
 
         :param cls: the pandas class
@@ -62,8 +62,6 @@ def get_signature_repr(cls, fn, args, full_signature=True):
         :return: string representation of the signature for the applied pandas method
     """
 
-    _raise_on_bad_class(cls)
-
     def _get_bold_text(text):
         return f"\033[1m{text}\033[0m"
 
@@ -71,7 +69,7 @@ def get_signature_repr(cls, fn, args, full_signature=True):
         return [
             param_value if full_signature else param_name
             for param_name, param_value in signature(
-                get_pandas_func(cls, fn)
+                method
             ).parameters.items()
             if param_name not in ("kwargs", "self")
         ]
@@ -96,7 +94,7 @@ def get_signature_repr(cls, fn, args, full_signature=True):
         _get_param_value(param_with_default, arg_value)
         for param_with_default, arg_value in zip_func(orig_func_params, args)
     )
-    return f"{_get_bold_text(fn.__name__)}({args_vals}):"
+    return f"{_get_bold_text(method.__name__)}({args_vals}):"
 
 
 def _raise_on_bad_class(cls):
@@ -139,7 +137,7 @@ def calc_step_number(method_name, input_df):
     if step_number:
         step_number = step_number[-1].execution_stats.step_number
 
-    if method_name not in DATAFRAME_ADDITIONAL_METHODS_TO_OVERIDE:
+    if method_name not in DATAFRAME_VERBOSE_METHODS_TO_OVERIDE:
         step_number += 1
     return step_number
 
